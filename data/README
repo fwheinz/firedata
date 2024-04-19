@@ -1,0 +1,17 @@
+The datasets were retrieved from the FIRMS homepage
+https://firms.modaps.eosdis.nasa.gov/active_fire/
+
+VIIRS_Australia_Jan_2020.csv
+VIIRS_Southamerica_Aug_2019.csv
+
+These can be converted to a Moving Region with
+
+./firms -o australia VIIRS_Australia_Jan_2020.csv
+./firms -o southamerica VIIRS_Southamerica_Aug_2019.csv
+
+The viewer can display the results with:
+
+java -jar MRView.jar australia.region australia-s1.100000-p2.pmreg
+java -jar MRView.jar australia.region southamerica-s1.100000-p2.pmreg
+
+

@@ -1,0 +1,2 @@
+F=$(dirname $0)
+java -jar $F/MRView.jar $@
