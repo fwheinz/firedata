@@ -12,6 +12,6 @@ These can be converted to a Moving Region with
 The viewer can display the results with:
 
 java -jar MRView.jar australia.region australia-s1.100000-p2.pmreg
-java -jar MRView.jar australia.region southamerica-s1.100000-p2.pmreg
+java -jar MRView.jar southamerica.region southamerica-s1.100000-p2.pmreg
 
 
