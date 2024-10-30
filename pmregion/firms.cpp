@@ -199,7 +199,8 @@ class Cluster {
 
 
 double minlat, minlon, maxlat, maxlon;
-int rangeactive = 0;
+double mintime, maxtime;
+int rangeactive = 0, timeactive = 0;
 
 static double utctime (struct tm *tm) {
 	char *tz;
@@ -262,8 +263,8 @@ vector<Cluster *> createClusterFromVIIRSCSV (char * fname) {
 
         double lat = atof(_lat);
         double lon = atof(_lon);
-	double scan = atof(_scan);
-	double track = atof(_track);
+				double scan = atof(_scan);
+				double track = atof(_track);
         int time = atoi(_time);
         char instant[100];
         sprintf(instant, "%s-%02d:%02d:00", _date, time/100, time%100);
@@ -276,6 +277,10 @@ vector<Cluster *> createClusterFromVIIRSCSV (char * fname) {
             nrfiltered++;
             continue;
         }
+				if (timeactive && (z < mintime || z > maxtime)) {
+					nrfiltered++;
+					continue;
+				}
 
         if (mini > maxi)
             mini = maxi = z;
@@ -888,6 +893,7 @@ void do_convert (char * fname) {
 void usage (void) {
     fprintf(stderr, "Usage: firms [-r <range>] [-s <size>] [-d <duration>] [-n nrpoints] <csvfile>\n"
 		    "              -r <minlat>x<minlon>,<maxlat>x<maxlon> (Range)\n"
+		    "              -i <starttime>,<endtime> (Range)\n"
 		    "              -s <scale> (Scale factor of a single fire, default 1.1)\n"
 		    "              -d <duration> (Duration of a fire in ms, default 86400000)\n"
 		    "              -n <nrpoints> (Only parse this number of points, default: all)\n"
@@ -910,57 +916,72 @@ void parserange (char *range) {
     rangeactive = 1;
 }
 
+void parseinterval (char *interval) {
+	char *end = strchr(interval, ',');
+	if (!end) {
+		printf("Invalid interval (no comma)\n");
+		usage();
+	}
+	*end++ = '\0';
+	mintime = parsetime(interval);
+	maxtime = parsetime(end);
+	timeactive = 1;
+}
+
 int main (int argc, char **argv) {
     int opt;
 
     nrthreads = get_nprocs();
 
-    while ((opt = getopt(argc, argv, "o:f:p:r:s:d:n:t:v")) != -1) {
-        switch (opt) {
-            case 'p':
-		pattern = atoi(optarg);
-                break;
-            case 'r':
-                parserange(optarg);
-                break;
-	    case 's':
-		scale = atof(optarg);
-		break;
-	    case 'd':
-		duration = atof(optarg);
-		break;
-	    case 'n':
-		nrpoints = atoi(optarg);
-		break;
-	    case 'v':
-		verbose++;
-		break;
-	    case 'o':
-		outfilename = strdup(optarg);
-		break;
-	    case 'f':
-		if (strcasecmp(optarg, "p") == 0)
-			format = FMT_PMREGION;
-		else if (strcasecmp(optarg, "m") == 0)
-			format = FMT_MREGION;
-		else if (strcasecmp(optarg, "ps") == 0)
-			format = FMT_PMREGION_STREAM;
-		else if (strcasecmp(optarg, "ms") == 0)
-			format = FMT_MREGION_STREAM;
-		else if (strcasecmp(optarg, "off") == 0)
-			format = FMT_OFF;
-		else {
-			fprintf(stderr, "Invalid format: %s\n", optarg);
-			usage();
+    while ((opt = getopt(argc, argv, "o:f:p:r:i:s:d:n:t:v")) != -1) {
+			switch (opt) {
+				case 'p':
+					pattern = atoi(optarg);
+					break;
+				case 'r':
+					parserange(optarg);
+					break;
+				case 'i':
+					parseinterval(optarg);
+					break;
+				case 's':
+					scale = atof(optarg);
+					break;
+				case 'd':
+					duration = atof(optarg);
+					break;
+				case 'n':
+					nrpoints = atoi(optarg);
+					break;
+				case 'v':
+					verbose++;
+					break;
+				case 'o':
+					outfilename = strdup(optarg);
+					break;
+				case 'f':
+					if (strcasecmp(optarg, "p") == 0)
+						format = FMT_PMREGION;
+					else if (strcasecmp(optarg, "m") == 0)
+						format = FMT_MREGION;
+					else if (strcasecmp(optarg, "ps") == 0)
+						format = FMT_PMREGION_STREAM;
+					else if (strcasecmp(optarg, "ms") == 0)
+						format = FMT_MREGION_STREAM;
+					else if (strcasecmp(optarg, "off") == 0)
+						format = FMT_OFF;
+					else {
+						fprintf(stderr, "Invalid format: %s\n", optarg);
+						usage();
+					}
+					break;
+				case 't':
+					nrthreads = atoi(optarg);
+					break;
+				default:
+					usage(); // exits
+			}
 		}
-		break;
-	    case 't':
-		nrthreads = atoi(optarg);
-		break;
-            default:
-                usage(); // exits
-        }
-    }
 
     if (optind >= argc) {
         cerr << "Input filename missing!" << endl;
