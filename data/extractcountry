@@ -1,0 +1,11 @@
+#!/bin/sh
+
+COUNTRY=$1
+
+CNAME=$(jq -r '(.features[] | select(.properties.ISO_A2 == "'$COUNTRY'")).properties.ADMIN' countries.geojson | tr "[A-Z]" "[a-z]")
+
+if [ "$CNAME" = "" ]; then echo "Country $COUNTRY not found!"; exit 1; fi;
+
+{ echo "(OBJECT region () region "; jq '(.features[] | select(.properties.ISO_A2 == "'$COUNTRY'")).geometry.coordinates' countries.geojson | tr "[]," "() "; echo ")"; } > $CNAME.reg
+
+echo "Wrote to $CNAME.reg"
